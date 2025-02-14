@@ -7,10 +7,9 @@ router = APIRouter()
 
 @router.get("")
 async def read_file(path: str):
-    # Allow only files under /data (or ./data in our project)
-    if not path or not path.startswith("/data") and not path.startswith("./data"):
-        raise HTTPException(
-            status_code=404, detail="File path not allowed or missing")
+    # Map '/data' to './data'
+    if path.startswith("/data"):
+        path = "." + path
 
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="File not found")

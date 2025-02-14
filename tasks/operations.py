@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime
 from glob import glob
 from pathlib import Path
+from dateutil.parser import parse
 
 import requests
 import numpy as np
@@ -48,7 +49,8 @@ def task_a2_format_markdown():
     result = subprocess.run(
         ["npx", "prettier@3.4.2", "--write", file_path],
         capture_output=True,
-        text=True
+        text=True,
+        shell=True
     )
     if result.returncode != 0:
         raise Exception("Prettier formatting failed: " + result.stderr)
@@ -74,7 +76,7 @@ def task_a3_count_wednesdays():
             if not line:
                 continue
             try:
-                date_obj = datetime.fromisoformat(line)
+                date_obj = parse(line)
                 if date_obj.weekday() == 2:  # Wednesday: Monday=0, Tuesday=1, Wednesday=2
                     count += 1
             except Exception:
@@ -129,7 +131,7 @@ def task_a5_logs_recent():
         with open(filepath, "r") as f:
             first_line = f.readline().rstrip("\n")
             lines.append(first_line)
-    output_path = os.path.join(logs_dir, "logs-recent.txt")
+    output_path = "./data/logs-recent.txt"
     with open(output_path, "w") as f:
         for line in lines:
             f.write(line + "\n")
@@ -175,9 +177,8 @@ def task_a6_create_docs_index():
 # ---------------------------
 def task_a7_extract_email():
     """
-    Read ./data/email.txt (which contains an email message),
-    extract the sender's email address, and write it to ./data/email-sender.txt.
-    Here we use a simple regex to find an email address after a "From:" header.
+    Read ./data/email.txt, extract the sender's email address,
+    and write it to ./data/email-sender.txt.
     """
     input_path = "./data/email.txt"
     output_path = "./data/email-sender.txt"
@@ -185,8 +186,8 @@ def task_a7_extract_email():
         raise Exception(f"File not found: {input_path}")
     with open(input_path, "r") as f:
         content = f.read()
-    # A simple regex: look for a line starting with "From:" and then an email
-    match = re.search(r"From:\s*([\w\.-]+@[\w\.-]+)", content)
+    match = re.search(
+        r"From:\s*(?:.*<)?([\w\.-]+@[\w\.-]+\.\w+)(?:>)?", content)
     if not match:
         raise Exception("Could not extract sender email from email.txt")
     sender_email = match.group(1)
@@ -198,9 +199,61 @@ def task_a7_extract_email():
 # ---------------------------
 # Task A8: Extract credit card number (delegated to LLM service)
 # ---------------------------
-# Note: Task A8 is implemented in services/llm_service.py as extract_credit_card_number()
-# and writes the result to ./data/credit-card.txt.
-# You can simply call that function from your task dispatcher.
+def extract_credit_card_number():
+    BASE_URL = "http://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.environ.get('AIPROXY_TOKEN')}"
+    }
+
+    image_path = "./data/credit_card.png"
+    try:
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+    except FileNotFoundError:
+        raise Exception("Credit card image not found at the specified path.")
+
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a test assistant. You are required to extract a credit card number from an image. "
+                    "For this test, output exactly and only the credit card number as a sequence of digits, with no spaces, punctuation, or extra text. "
+                    "Do not include any apologies, disclaimers, or extra commentary."
+                )
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Extract the credit card number from the image below. Output only the digits, with no extra text."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ],
+    }
+
+    response = requests.post(BASE_URL, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        result = response.json()
+        cno = result["choices"][0]["message"]["content"].strip()
+        output_path = "./data/credit-card.txt"
+        with open(output_path, "w") as f:
+            f.write(cno)
+        return cno
+    else:
+        raise Exception(
+            f"LLM API error: {response.status_code} {response.text}")
 
 
 # ---------------------------
@@ -225,7 +278,7 @@ def task_a9_find_similar_comments():
     # Call the embeddings endpoint (synchronously using requests)
     OPENAI_API_BASE = os.getenv(
         "OPENAI_API_BASE", "https://aiproxy.sanand.workers.dev/openai/v1")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
     payload = {"model": "text-embedding-3-small", "input": comments}
     response = requests.post(
