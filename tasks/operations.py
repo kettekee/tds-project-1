@@ -18,20 +18,25 @@ import numpy as np
 
 def task_a1_run_datagen(email: str):
     """
-    Install `uv` (if required) and run the script
-    https://raw.githubusercontent.com/sanand0/tools-in-data-science-public/tds-2025-01/datagen.py
-    with the given email as the only argument.
-    (Assumes that datagen.py exists in the project root.)
+    Delete the existing data folder (if any) and run datagen.py with the given email and --root ./data.
+    This ensures fresh data is generated each time.
     """
-    # You could optionally download datagen.py first,
-    # but since it is in your project folder, just run it.
+    data_dir = "./data"
+    if os.path.exists(data_dir):
+        shutil.rmtree(data_dir)
+        print(f"Deleted existing data folder: {data_dir}")
+
+    # Run datagen.py with the email and --root ./data arguments.
     result = subprocess.run(
-        ["python", "datagen.py", email],
+        ["python3", "datagen.py", email, "--root", "./data"],
         capture_output=True,
         text=True
     )
+
     if result.returncode != 0:
         raise Exception("Running datagen.py failed: " + result.stderr)
+
+    print(result.stdout)
     return f"datagen.py ran with email {email}"
 
 
