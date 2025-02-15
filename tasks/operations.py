@@ -11,6 +11,23 @@ from dateutil.parser import parse
 import requests
 import numpy as np
 
+
+def download_datagen():
+    """
+    Download the latest datagen.py file from GitHub and save it in the project root.
+    """
+    # Use the raw URL (not the GitHub page URL)
+    if not os.path.exists("datagen.py"):
+        data_url = "https://raw.githubusercontent.com/sanand0/tools-in-data-science-public/tds-2025-01/project-1/datagen.py"
+        response = requests.get(data_url)
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to download datagen.py: HTTP {response.status_code}")
+
+        with open("datagen.py", "w", encoding="utf-8") as f:
+            f.write(response.text)
+        print("Downloaded datagen.py successfully.")
+
 # ---------------------------
 # Task A1: Run datagen.py
 # ---------------------------
@@ -21,6 +38,10 @@ def task_a1_run_datagen(email: str):
     Delete the existing data folder (if any) and run datagen.py with the given email and --root ./data.
     This ensures fresh data is generated each time.
     """
+    # Download the latest datagen.py dynamically
+    download_datagen()
+
+    # Delete the existing data folder if it exists
     data_dir = "./data"
     if os.path.exists(data_dir):
         shutil.rmtree(data_dir)
