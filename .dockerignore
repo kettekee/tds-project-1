@@ -1,0 +1,24 @@
+# Ignore the data folder (generated at runtime)
+data
+
+# Ignore the dynamically downloaded datagen.py
+datagen.py
+
+# Ignore environment files containing secrets
+.env
+
+# Ignore Node.js dependencies (if using npm)
+node_modules
+
+# Ignore Python virtual environment (venv)
+venv
+
+# Ignore Python cache files
+__pycache__/
+
+# Ignore Docker's own ignore file
+.dockerignore
+
+# Ignore Git-related files
+.git
+.gitignore
