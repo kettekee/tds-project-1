@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   git \
   curl \
   sqlite3 \
+  libsqlite3-dev \
   ffmpeg \
   imagemagick \
   build-essential \
@@ -25,6 +26,7 @@ RUN apt-get update && apt-get install -y nodejs npm && \
   node -v && \
   npm -v && \
   npm install -g prettier@3.4.2
+
 
 # Install uv (Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
