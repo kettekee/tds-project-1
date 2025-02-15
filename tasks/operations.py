@@ -49,7 +49,7 @@ def task_a1_run_datagen(email: str):
 
     # Run datagen.py with the email and --root ./data arguments.
     result = subprocess.run(
-        ["uv", "run", "datagen.py", email, "--root", "./data"],
+        ["python3", "datagen.py", email, "--root", "./data"],
         capture_output=True,
         text=True
     )
